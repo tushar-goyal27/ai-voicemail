@@ -1,16 +1,18 @@
-import { AudioUtil } from "./audio.util";
+import {
+  base64ToBinary,
+  binaryStringToArrayBuffer,
+  concatBuffers,
+  createWavHeader,
+} from "./audio-helpers";
 
 export class AudioDeltaHandler {
   private pcmChunks: ArrayBuffer[] = [];
-  private readonly audioUtil: AudioUtil;
 
-  constructor() {
-    this.audioUtil = new AudioUtil();
-  }
+  constructor() {}
 
   appendDelta(base64: string) {
-    const binaryString = this.audioUtil.base64ToBinary(base64);
-    const pcmBuffer = this.audioUtil.binaryStringToArrayBuffer(binaryString);
+    const binaryString = base64ToBinary(base64);
+    const pcmBuffer = binaryStringToArrayBuffer(binaryString);
 
     // Add the PCM buffer to the chunks array for later concatenation
     this.pcmChunks.push(pcmBuffer);
@@ -23,17 +25,14 @@ export class AudioDeltaHandler {
   ): ArrayBuffer {
     const concatenatedPCMBuffer = this.concatPCMChunks();
 
-    const wavHeader = this.audioUtil.createWavHeader(
+    const wavHeader = createWavHeader(
       numChannels,
       sampleRate,
       bitsPerSample,
       concatenatedPCMBuffer.byteLength
     );
 
-    const wavArrayBuffer = this.audioUtil.concatBuffers(
-      wavHeader,
-      concatenatedPCMBuffer
-    );
+    const wavArrayBuffer = concatBuffers(wavHeader, concatenatedPCMBuffer);
 
     return wavArrayBuffer; // This is the final WAV ArrayBuffer
   }

@@ -7,7 +7,8 @@ export function setupWebSocket(wss: WebSocketServer) {
 
     const openaiSvc = new OpenAiService(ws);
 
-    ws.on("message", (message: string) => {
+    ws.on("message", (data: Buffer) => {
+      const message = data.toString("base64");
       console.log("Received from client:", message);
       openaiSvc.sendAudioAndPromptResponse(message);
 

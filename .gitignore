@@ -53,3 +53,6 @@ out/
 build/
 tmp/
 temp/
+
+# OpenAI audio files
+.wav

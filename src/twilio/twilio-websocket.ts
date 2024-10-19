@@ -1,25 +1,21 @@
 import { WebSocket, WebSocketServer } from "ws";
-import { OpenAiService } from "./openai/openai-service";
+import { OpenAiService } from "../openai/openai-service";
 import { IStreamStartMessage } from "./twilio-types";
 
-export function setupWebSocket(wss: WebSocketServer) {
+export function setupTwilioWebSocket(wss: WebSocketServer) {
   wss.on("connection", (ws: WebSocket) => {
     console.log("A client connected");
 
     const openaiSvc = new OpenAiService(ws);
 
     ws.on("message", (message: Buffer) => {
-      // console.log("Received from client JSON:", JSON.parse(data.toString()));
-      // const message = data.toString("base64");
-      // openaiSvc.sendAudioAndPromptResponse(message);
-
       const data = JSON.parse(message.toString());
 
       switch (data.event) {
         case "start": {
           const start = data.start as IStreamStartMessage;
           console.log("Incoming stream has started", start);
-          openaiSvc.addCallMetadata(start.streamSid, start.customParameters);
+          openaiSvc.setCallMetadata(start.streamSid, start.customParameters);
           break;
         }
         case "media": {
@@ -38,6 +34,6 @@ export function setupWebSocket(wss: WebSocketServer) {
       openaiSvc.disconnect();
     });
 
-    ws.send("Welcome to the WebSocket server!");
+    ws.send("Connected to AI Voice Mail");
   });
 }

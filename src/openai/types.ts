@@ -13,5 +13,6 @@ export interface IOpenAiIncomingMessage {
       }[];
     }[];
   };
+  item_id?: string;
   delta?: string;
 }

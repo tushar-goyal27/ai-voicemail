@@ -27,6 +27,10 @@ export function setupTwilioWebSocket(wss: WebSocketServer) {
           openaiSvc.setAiAudioPlayingComplete();
           break;
         }
+        case "stop": {
+          openaiSvc.sendUserHangedUpEvent();
+          break;
+        }
         default: {
           console.log("Received non-media event:", data);
           break;

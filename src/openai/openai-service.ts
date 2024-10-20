@@ -1,8 +1,9 @@
 import { WebSocket } from "ws";
-import { IOpenAiIncomingMessage } from "./types";
+import { ERealtimeServerEvents, IOpenAiIncomingMessage } from "./types";
 import { getOpenAiWebSocket } from "./openai-websocket";
 import { convertToPCM16 } from "../audio/audio-helpers";
 import { DIGITAL_SEO_PROMPT } from "./prompts";
+import { ETools, toolsDefination } from "./tools";
 
 export class OpenAiService {
   private readonly openAiWs: WebSocket;
@@ -14,6 +15,7 @@ export class OpenAiService {
 
   private streamSid: string;
   private callDetails: { caller: string; called: string };
+  private isAiAudioPlaying = false;
 
   constructor(clientWs: WebSocket) {
     this.openAiWs = getOpenAiWebSocket();
@@ -64,6 +66,10 @@ export class OpenAiService {
     this.openAiWs.send(JSON.stringify(audioAppend));
   };
 
+  setAiAudioPlayingComplete = () => {
+    this.isAiAudioPlaying = false;
+  };
+
   private intializeSession = () => {
     const sessionUpdate = {
       type: "session.update",
@@ -81,6 +87,7 @@ export class OpenAiService {
         modalities: ["text", "audio"],
         // modalities: ["text"],
         temperature: 0.8,
+        tools: [toolsDefination[ETools.HANG_UP]],
       },
     };
     this.openAiWs.send(JSON.stringify(sessionUpdate));
@@ -116,7 +123,7 @@ export class OpenAiService {
       );
 
     if (
-      receivedMessage.type === "response.audio.delta" &&
+      receivedMessage.type === ERealtimeServerEvents.RESPONSE_AUDIO_DELTA &&
       receivedMessage.delta
     ) {
       const audioDelta = {
@@ -126,11 +133,12 @@ export class OpenAiService {
           payload: receivedMessage.delta,
         },
       };
-
+      this.isAiAudioPlaying = true;
       this.clientWs.send(JSON.stringify(audioDelta));
     }
 
-    if (receivedMessage.type === "response.audio.done") {
+    if (receivedMessage.type === ERealtimeServerEvents.RESPONSE_AUDIO_DONE) {
+      // sent to twilio to mark the audio as complete. Twilio sends the mark event with same name when the audio has been played completely on the call.
       const markEvent = {
         event: "mark",
         streamSid: this.streamSid,
@@ -140,9 +148,39 @@ export class OpenAiService {
       };
       this.clientWs.send(JSON.stringify(markEvent));
     }
+
+    if (
+      receivedMessage.type === ERealtimeServerEvents.RESPONSE_FUNCTION_CALL_DONE
+    ) {
+      switch (receivedMessage.name) {
+        case ETools.HANG_UP: {
+          this.hangUp();
+          break;
+        }
+      }
+    }
+
+    if (receivedMessage.type === ERealtimeServerEvents.ERROR) {
+      this.hangUp(false);
+    }
   }
 
   disconnect() {
+    console.log("OpenAI disconnected");
     this.openAiWs.close();
+  }
+
+  hangUp(waitForAiToFinish = true) {
+    const waitForAi = async () => {
+      if (!waitForAiToFinish) return;
+      while (this.isAiAudioPlaying) {
+        await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
+      }
+    };
+
+    waitForAi().then(() => {
+      console.log("Hanging up the call");
+      this.clientWs.close();
+    });
   }
 }

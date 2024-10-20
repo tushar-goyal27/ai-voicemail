@@ -22,6 +22,11 @@ export function setupTwilioWebSocket(wss: WebSocketServer) {
           openaiSvc.sendCallAudio(data.media.payload);
           break;
         }
+        case "mark": {
+          // this means the audio playing is complete on twilio side
+          openaiSvc.setAiAudioPlayingComplete();
+          break;
+        }
         default: {
           console.log("Received non-media event:", data);
           break;

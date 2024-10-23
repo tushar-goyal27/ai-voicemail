@@ -4,7 +4,9 @@
   "description": "",
   "main": "dist/main.js",
   "scripts": {
-    "start": "tsc && node dist/main.js",
+    "prepare": "npm install",
+    "build": "npx tsc",
+    "start": "npm run build && node dist/main.js",
     "watch": "nodemon --watch 'src/**/*.ts' --exec 'ts-node src/main.ts'",
     "lint": "eslint . --ext .ts"
   },

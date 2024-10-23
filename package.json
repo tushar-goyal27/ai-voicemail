@@ -5,7 +5,7 @@
   "main": "dist/main.js",
   "scripts": {
     "prestart": "npm install",
-    "build": "npx tsc",
+    "build": "tsc",
     "start": "npm run build && node dist/main.js",
     "watch": "nodemon --watch 'src/**/*.ts' --exec 'ts-node src/main.ts'",
     "lint": "eslint . --ext .ts"

@@ -3,7 +3,7 @@ export enum ETools {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const toolsDefination: Record<ETools, any> = {
+export const TOOLS_DEFINATION_CONFIG: Record<ETools, any> = {
   [ETools.HANG_UP]: {
     type: "function",
     name: ETools.HANG_UP,
